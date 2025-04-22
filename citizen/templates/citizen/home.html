@@ -1,0 +1,21 @@
+{% extends 'header.html' %}
+
+{% block content %}
+<div>
+
+
+    <div>
+        <h1>All posts</h1>
+        {% for post in posts %}
+        <div>
+            <h2>For department of: {{ post.dept }}</h2>
+            <h2>Ward No: {{ post.ward_no }}</h2>
+            <p>Description: {{ post.description|truncatewords:5 }}</p>
+            <p>Post created on: {{ post.created }}</p>
+            <a href="{% url 'view_grevance' post.id %}">Read More</a>
+            {% empty %} <h2>No Posts currently available</h2>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock content %}

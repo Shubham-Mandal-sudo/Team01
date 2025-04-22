@@ -1,0 +1,16 @@
+<div>
+    <form action="/register" method="post">
+        {% csrf_token %}
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <input type="password" id="password" name="password" required placeholder="Password">
+        <input type="password" id="confirm_password" name="confirm_password" required placeholder="Confirm Password">
+        <input type="submit" value="Register">
+        {% if messages %}
+        {% for message in messages %}
+        <p>{{ message }}</p>
+        {% endfor %}
+        {% endif %}
+        <p>Already have an account? <a href="{% url 'login' %}">Log in here</a>.</p>
+    </form>
+</div>
