@@ -3,16 +3,23 @@
 {% block content %}
 
 <div>
-    <a href="{% url 'lodge_grevance' %}">Lodge your grevance</a>
-</div>
-
-<div>
     <h2>For department of: {{ post.dept }}</h2>
     <h2>Ward. No: {{ post.ward_no }}</h2>
     <p>Description: {{ post.description }}</p>
     
     <img src="/media/{{post.image}}" alt="Image not found">
     <p>Post created on: {{ post.created }}</p>
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        <ul>
+        {% for field in form %}
+            {% for error in field.errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
 </div>
 
 {% endblock content %}

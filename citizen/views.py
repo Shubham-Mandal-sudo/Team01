@@ -4,11 +4,14 @@ from .forms import PostForm
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
 def loginPage(request):
+    if request.user.is_authenticated:
+        return redirect('home')
 
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -31,18 +34,23 @@ def loginPage(request):
     return render(request, 'citizen/login.html')
 
 def registerPage(request):
-    form = PostForm()
+    if request.user.is_authenticated:
+        return redirect('home')
+    
+    form = UserCreationForm()
+    
     if request.method == 'POST':
-        form = PostForm(request.POST)
+        form = UserCreationForm(request.POST)
         if form.is_valid():
-            user = User.objects.create_user(
-                username=form.cleaned_data['username'],
-                password=form.cleaned_data['password']
-                )
-            messages.success(request, 'User created successfully')
-            return redirect('login')
-        messages.error(request, 'User creation failed. Please try again.')
-        form = PostForm()
+            user = form.save(commit=False)
+            user.username = user.username
+            user.save()
+            login(request, user)
+            return redirect('home')
+        else:
+            messages.error(request,"An error occured during registration")
+
+        
     return render(request, 'citizen/register.html', {'form': form})
     
 
@@ -53,11 +61,14 @@ def logoutUser(request):
 @login_required(login_url='/login')
 def grevance(request):
     form = PostForm()
-    if request.method == 'POST':
-        form = PostForm(request.POST)
+    if request.method == 'GET':
+        username = request.user.username
+        initial_data = {'host':username, 'status':'pending'}
         if form.is_valid():
             form.save()
             return redirect('home')
+        else:
+            messages.error(request, 'There was an error in your submission. Please correct the errors below.')
         
     context = {'form':form}
     return render(request, 'citizen/grevance_from.html', context)
