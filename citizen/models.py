@@ -28,8 +28,13 @@ class Post(models.Model):
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(null=True, blank=True, upload_to='images/')
     created = models.DateTimeField(auto_now_add=True)
-    status = models.ForeignKey(status, on_delete= models.SET_NULL, null=True, default="Pending")
+    status = models.ForeignKey(status, on_delete= models.SET_NULL, null=True)
 
     class Meta:
         ordering = ['-created']
     
+    def save(self, *args, **kwargs):
+        # Custom logic before saving
+        if not self.status:
+            self.status = status.objects.get(name="Pending")  # Set default status if not provided
+        super(Post, self).save(*args, **kwargs)

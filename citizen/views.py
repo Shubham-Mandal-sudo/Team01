@@ -67,9 +67,7 @@ def grevance(request):
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES)
         if form.is_valid():
-            grievance = form.save(commit=False)
-            grievance.host = request.user
-            grievance.save()
+            form.save()
             messages.success(request, 'Your grievance has been submitted successfully!')
             return redirect('home')
         else:
