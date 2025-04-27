@@ -1,25 +1,46 @@
 {% extends 'header.html' %}
 
+{% block title %}Grievance Details - Citizen Grievance Portal{% endblock %}
+
 {% block content %}
-
-<div>
-    <h2>For department of: {{ post.dept }}</h2>
-    <h2>Ward. No: {{ post.ward_no }}</h2>
-    <p>Description: {{ post.description }}</p>
-    
-    <img src="/media/{{post.image}}" alt="Image not found">
-    <p>Post created on: {{ post.created }}</p>
-    {% if form.errors %}
-    <div class="alert alert-danger">
-        <ul>
-        {% for field in form %}
-            {% for error in field.errors %}
-                <li>{{ error }}</li>
-            {% endfor %}
-        {% endfor %}
-        </ul>
+<div class="mb-4">
+    <div class="mb-3">
+        <a href="{% url 'home' %}" class="btn btn-outline">&larr; Back to All Grievances</a>
+        <a href="{% url 'lodge_grevance' %}" class="btn btn-primary">Lodge New Grievance</a>
     </div>
-    {% endif %}
-</div>
 
+    <div class="grievance-detail">
+        <div class="mb-3">
+            <h2 class="mb-1">Grievance Details</h2>
+            <div class="mb-3">
+                {% if post.status %}
+                <span class="badge badge-{{ post.status.name|lower }}">{{ post.status }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <h3 class="mb-1">Department</h3>
+            <p class="mb-3">{{ post.dept }}</p>
+
+            <h3 class="mb-1">Ward Number</h3>
+            <p class="mb-3">{{ post.ward_no }}</p>
+
+            <h3 class="mb-1">Description</h3>
+            <p class="mb-3">{{ post.description }}</p>
+        </div>
+
+        {% if post.image %}
+        <div class="mb-3">
+            <h3 class="mb-1">Attached Image</h3>
+            <img src="/media/{{post.image}}" alt="Grievance Image" class="grievance-image">
+        </div>
+        {% endif %}
+
+        <div class="grievance-meta">
+            <span>Posted by: {{ post.host.username }}</span>
+            <span>Date: {{ post.created|date:"F d, Y" }}</span>
+        </div>
+    </div>
+</div>
 {% endblock content %}

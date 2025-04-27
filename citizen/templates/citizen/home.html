@@ -1,24 +1,41 @@
 {% extends 'header.html' %}
 
-{% block style %}{% endblock style%}
+{% block title %}Home - Citizen Grievance Portal{% endblock %}
 
 {% block content %}
-<div>
-    <div>
-        <a href="{% url 'lodge_grevance' %}">Lodge your grevance</a>
+<div class="mb-4">
+    <div class="text-center mb-4">
+        <h1 class="mb-2">Citizen Grievance Portal</h1>
+        <p class="mb-3">A platform to report and track civic issues in your area</p>
+        <a href="{% url 'lodge_grevance' %}" class="btn btn-primary">Lodge New Grievance</a>
     </div>
 
-    <div>
-        <h1>All posts</h1>
-        {% for post in posts %}
-
-        <div class="post-tile">
-            <img src="/media/{{post.image}}" alt="Post Image">
-            <h2> {{ post.ward_no }}</h2>
-            <p class="description">{{ post.description|truncatewords:6 }}</p>
-            <a href="{% url 'view_grevance' post.id %}" class="read-more-btn">Read More</a>
-          </div>
-        {% endfor %}
+    <div class="mb-3">
+        <h2 class="mb-3">Recent Grievances</h2>
+        <div class="posts-container">
+            {% for post in posts %}
+            <div class="card">
+                <h3 class="card-title">{{ post.dept }}</h3>
+                <h4 class="card-subtitle">Ward No: {{ post.ward_no }}</h4>
+                <p class="card-text">{{ post.description|truncatewords:20 }}</p>
+                <div class="card-meta">
+                    <span>Posted: {{ post.created|date:"M d, Y" }}</span>
+                    {% if post.status %}
+                    <span class="badge badge-{{ post.status.name|lower }}">{{ post.status }}</span>
+                    {% endif %}
+                </div>
+                <div class="mt-2">
+                    <a href="{% url 'view_grevance' post.id %}" class="btn">View Details</a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center p-4">
+                <h3>No grievances have been reported yet</h3>
+                <p class="mb-3">Be the first to report an issue in your area</p>
+                <a href="{% url 'lodge_grevance' %}" class="btn btn-primary">Lodge New Grievance</a>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endblock content %}

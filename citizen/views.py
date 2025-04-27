@@ -1,85 +1,94 @@
 from django.shortcuts import render, redirect
 from .models import Post
-from .forms import PostForm
+from .forms import PostForm, UserRegistrationForm, LoginForm
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
 def loginPage(request):
-    if request.user.is_authenticated:
-        return redirect('home')
+    # Check if there's a next parameter in the URL or form submission
+    next_url = request.GET.get('next', '')
+    if not next_url:
+        next_url = request.POST.get('next', '')
+
+    # If next_url is empty or not provided, default to home
+    if not next_url:
+        next_url = 'home'
 
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
 
-        try:
-            user = User.objects.get(username=username)
-        except:
-            messages.error(request, 'Username not found')
-        
-        user = authenticate(request, username=username, password=password)
+            user = authenticate(request, username=username, password=password)
 
-        if user is not None:
-            login(request, user)
-            return redirect('home')
-        
-        else:
-            messages.error(request, "Username and password didn't match")
+            if user is not None:
+                login(request, user)
 
-    return render(request, 'citizen/login.html')
+                # Check if next_url is a full URL or just a path
+                if next_url == 'home' or next_url.startswith('/'):
+                    return redirect(next_url)
+                else:
+                    # If it's not a valid URL pattern, default to home
+                    return redirect('home')
+            else:
+                messages.error(request, "Invalid username or password. Please try again.")
+    else:
+        form = LoginForm()
+
+    return render(request, 'citizen/login.html', {'form': form, 'next': next_url})
 
 def registerPage(request):
-    if request.user.is_authenticated:
-        return redirect('home')
-    
-    form = UserCreationForm()
-    
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.username = user.username
-            user.save()
-            login(request, user)
-            return redirect('home')
-        else:
-            messages.error(request,"An error occured during registration")
+            User.objects.create_user(
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password']
+            )
+            messages.success(request, 'Account created successfully! You can now log in.')
+            return redirect('login')
+    else:
+        form = UserRegistrationForm()
 
-        
     return render(request, 'citizen/register.html', {'form': form})
-    
+
 
 def logoutUser(request):
     logout(request)
     return redirect('home')
 
-@login_required(login_url='/login')
+@login_required(login_url='login')
 def grevance(request):
-    form = PostForm()
-    if request.method == 'GET':
-        username = request.user.username
-        initial_data = {'host':username, 'status':'pending'}
+    if request.method == 'POST':
+        form = PostForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            grievance = form.save(commit=False)
+            grievance.host = request.user
+            grievance.save()
+            messages.success(request, 'Your grievance has been submitted successfully!')
             return redirect('home')
         else:
-            messages.error(request, 'There was an error in your submission. Please correct the errors below.')
-        
-    context = {'form':form}
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        # Pre-fill the host field with the current user
+        initial_data = {'host': request.user}
+        form = PostForm(initial=initial_data)
+
+    context = {'form': form}
     return render(request, 'citizen/grevance_from.html', context)
 
-@login_required(login_url='/login')
+@login_required(login_url='login')
 def post(request,pk):
     post = Post.objects.get(id=pk)
     context = {'post':post}
     return render(request, 'citizen/grevance_show.html', context)
 
-@login_required(login_url='/login')
+@login_required(login_url='login')
 def home(request):
     posts = Post.objects.all()
     context = {'posts':posts}
