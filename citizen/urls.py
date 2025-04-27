@@ -7,5 +7,6 @@ urlpatterns = [
     path('view/<int:pk>/', views.post, name = "view_grevance"),
     path('login/',views.loginPage, name='login'),
     path('logout/', views.logoutUser, name='logout'),
-    path('register/',views.registerPage, name='register')
+    path('register/',views.registerPage, name='register'),
+    path('change_status/<int:pk>/', views.change_status, name='change_status'),
 ]

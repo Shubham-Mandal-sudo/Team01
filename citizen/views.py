@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
-from .models import Post
+from .models import Post, status
 from .forms import PostForm, UserRegistrationForm, LoginForm
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 
@@ -91,4 +92,15 @@ def home(request):
     posts = Post.objects.all()
     context = {'posts':posts}
     return render(request, 'citizen/home.html', context)
+
+@login_required(login_url='/login')
+def change_status(request, pk):
+    post = get_object_or_404(Post, id=pk)
+    if request.user.is_staff:
+        post.status = status.objects.get(name="Resolved")
+        post.save()
+        messages.success(request, 'Status updated to resolved.')
+    else:
+        messages.error(request, 'You do not have permission to change the status.')
+    return redirect('view_grevance', pk=pk)
 

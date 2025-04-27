@@ -37,6 +37,13 @@
         </div>
         {% endif %}
 
+        {% if request.user.is_staff %}
+        <form method="POST" action="{% url 'change_status' post.id %}">
+            {% csrf_token %}
+            <button type="submit">Mark as Resolved</button>
+        </form>
+        {% endif %}
+
         <div class="grievance-meta">
             <span>Posted by: {{ post.host.username }}</span>
             <span>Date: {{ post.created|date:"F d, Y" }}</span>
