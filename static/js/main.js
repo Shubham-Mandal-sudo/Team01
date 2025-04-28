@@ -1,6 +1,42 @@
 // Main JavaScript for Team01 Project
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Add animation classes to elements when they come into view
+    const animateOnScroll = function() {
+        const elements = document.querySelectorAll('.card, .grievance-detail, .auth-container, .posts-container');
+
+        elements.forEach(element => {
+            // Check if element is already animated
+            if (element.classList.contains('animated')) return;
+
+            const elementPosition = element.getBoundingClientRect().top;
+            const screenPosition = window.innerHeight / 1.2;
+
+            if (elementPosition < screenPosition) {
+                element.classList.add('animated', 'fade-in');
+            }
+        });
+    };
+
+    // Run on initial load
+    animateOnScroll();
+
+    // Run on scroll
+    window.addEventListener('scroll', animateOnScroll);
+
+    // Add hover effects to buttons
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-3px)';
+            this.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.1)';
+        });
+
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '';
+        });
+    });
     // Mobile navigation toggle with animation
     const mobileNavToggle = document.getElementById('mobile-nav-toggle');
     const navLinks = document.querySelector('.nav-links');

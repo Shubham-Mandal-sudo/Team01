@@ -228,3 +228,19 @@
 .icon-login::before {
   content: "login";
 }
+
+.icon-arrow-up::before {
+  content: "arrow_upward";
+}
+
+.icon-arrow-down::before {
+  content: "arrow_downward";
+}
+
+.icon-list::before {
+  content: "list";
+}
+
+.icon-trash::before {
+  content: "delete_forever";
+}

@@ -1,11 +1,15 @@
 from django.shortcuts import render, redirect
-from .models import Post, status
+from .models import Post, status, Vote
 from .forms import PostForm, UserRegistrationForm, LoginForm
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
+from django.http import JsonResponse, HttpResponseRedirect
+from django.urls import reverse
+from django.db.models import Count, Sum
+from django.db.models.functions import Coalesce
 
 # Create your views here.
 
@@ -82,15 +86,40 @@ def grevance(request):
     return render(request, 'citizen/grevance_from.html', context)
 
 @login_required(login_url='login')
-def post(request,pk):
-    post = Post.objects.get(id=pk)
-    context = {'post':post}
+def post(request, pk):
+    post = get_object_or_404(Post, id=pk)
+    # Get user's vote if it exists
+    user_vote = None
+    if request.user.is_authenticated:
+        try:
+            user_vote = Vote.objects.get(user=request.user, post=post)
+        except Vote.DoesNotExist:
+            pass
+
+    context = {
+        'post': post,
+        'user_vote': user_vote,
+        'upvote_count': post.get_upvote_count(),
+        'downvote_count': post.get_downvote_count(),
+    }
     return render(request, 'citizen/grevance_show.html', context)
 
-@login_required(login_url='login')
 def home(request):
-    posts = Post.objects.all()
-    context = {'posts':posts}
+    # Annotate posts with vote count and order by vote count (descending)
+    # Use Coalesce to handle NULL values (when there are no votes)
+    posts = Post.objects.all().annotate(vote_count=Coalesce(Sum('votes__value'), 0)).order_by('-vote_count', '-created')
+
+    # Get user's votes for highlighting in the UI
+    user_votes = {}
+    if request.user.is_authenticated:
+        votes = Vote.objects.filter(user=request.user)
+        for vote in votes:
+            user_votes[vote.post_id] = vote.value
+
+    context = {
+        'posts': posts,
+        'user_votes': user_votes
+    }
     return render(request, 'citizen/home.html', context)
 
 @login_required(login_url='/login')
@@ -103,4 +132,98 @@ def change_status(request, pk):
     else:
         messages.error(request, 'You do not have permission to change the status.')
     return redirect('view_grevance', pk=pk)
+
+@login_required(login_url='login')
+def vote_post(request, pk, vote_type):
+    post = get_object_or_404(Post, id=pk)
+
+    # Check if user has already voted
+    try:
+        vote = Vote.objects.get(user=request.user, post=post)
+        # If vote exists, update it
+        if vote_type == 'upvote':
+            if vote.value == 1:  # Already upvoted, remove vote
+                vote.delete()
+            else:  # Change to upvote
+                vote.value = 1
+                vote.save()
+        elif vote_type == 'downvote':
+            if vote.value == -1:  # Already downvoted, remove vote
+                vote.delete()
+            else:  # Change to downvote
+                vote.value = -1
+                vote.save()
+    except Vote.DoesNotExist:
+        # Create new vote
+        if vote_type == 'upvote':
+            Vote.objects.create(user=request.user, post=post, value=1)
+        elif vote_type == 'downvote':
+            Vote.objects.create(user=request.user, post=post, value=-1)
+
+    # Return JSON response for AJAX or redirect for non-AJAX
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'upvote_count': post.get_upvote_count(),
+            'downvote_count': post.get_downvote_count(),
+            'total_votes': post.get_vote_count()
+        })
+    else:
+        return HttpResponseRedirect(reverse('view_grevance', args=[pk]))
+
+@login_required(login_url='login')
+def my_complaints(request):
+    # Get all complaints by the current user and sort by vote count
+    # Use Coalesce to handle NULL values (when there are no votes)
+    posts = Post.objects.filter(host=request.user).annotate(vote_count=Coalesce(Sum('votes__value'), 0)).order_by('-vote_count', '-created')
+
+    # Get user's votes for highlighting in the UI
+    user_votes = {}
+    votes = Vote.objects.filter(user=request.user)
+    for vote in votes:
+        user_votes[vote.post_id] = vote.value
+
+    context = {
+        'posts': posts,
+        'user_votes': user_votes
+    }
+    return render(request, 'citizen/my_complaints.html', context)
+
+@login_required(login_url='login')
+def edit_complaint(request, pk):
+    post = get_object_or_404(Post, id=pk)
+
+    # Check if the user is the owner of the complaint
+    if post.host != request.user:
+        messages.error(request, "You don't have permission to edit this complaint.")
+        return redirect('my_complaints')
+
+    if request.method == 'POST':
+        form = PostForm(request.POST, request.FILES, instance=post)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your complaint has been updated successfully!')
+            return redirect('my_complaints')
+    else:
+        form = PostForm(instance=post)
+
+    context = {'form': form, 'post': post}
+    return render(request, 'citizen/edit_complaint.html', context)
+
+@login_required(login_url='login')
+def delete_complaint(request, pk):
+    post = get_object_or_404(Post, id=pk)
+
+    # Check if the user is the owner of the complaint
+    if post.host != request.user:
+        messages.error(request, "You don't have permission to delete this complaint.")
+        return redirect('my_complaints')
+
+    if request.method == 'POST':
+        post.delete()
+        messages.success(request, 'Your complaint has been deleted successfully!')
+        return redirect('my_complaints')
+
+    context = {'post': post}
+    return render(request, 'citizen/delete_complaint.html', context)
 

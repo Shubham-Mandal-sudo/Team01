@@ -24,6 +24,7 @@
                     <a href="{% url 'home' %}"><span class="icon icon-home icon-sm"></span> Home</a>
                     <a href="{% url 'lodge_grevance' %}"><span class="icon icon-edit icon-sm"></span> Lodge Grievance</a>
                     {% if request.user.is_authenticated %}
+                    <a href="{% url 'my_complaints' %}"><span class="icon icon-list icon-sm"></span> My Complaints</a>
                     <a href="{% url 'logout' %}"><span class="icon icon-logout icon-sm"></span> Logout</a>
                     {% else %}
                     <a href="{% url 'login' %}"><span class="icon icon-login icon-sm"></span> Login</a>
